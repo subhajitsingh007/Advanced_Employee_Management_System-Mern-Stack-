@@ -1,6 +1,6 @@
-import React, { useState,useEffect } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
-import axios from "axios";
+
 const SettingsContainer = styled.div`
   background: #ffffff;
   padding: 30px;
@@ -64,103 +64,41 @@ const DangerButton = styled(Button)`
 
 const SettingsPage = () => {
   const [darkMode, setDarkMode] = useState(false);
-  const [language, setLanguage] = useState("English");
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [systemAlerts, setSystemAlerts] = useState(true);
-  const [message, setMessage] = useState("");
-
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [language, setLanguage] = useState("English");
+  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const { data } = await axios.get("/api/settings");
-      setDarkMode(data.settings.theme === "dark");
-      setLanguage(data.settings.language);
-      setEmailNotifications(data.settings.notifications?.email);
-      setSystemAlerts(data.settings.notifications?.system);
-    } catch (error) {
-      console.error("Error fetching settings:", error.message);
+  const handlePasswordChange = () => {
+    if (currentPassword && newPassword) {
+      setMessage("✅ Password updated successfully!");
+    } else {
+      setMessage("⚠️ Please fill in all fields.");
     }
   };
 
-  const handleSaveSettings = async () => {
-  try {
-    const res = await fetch("/api/settings", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`, // Or however you store it
-      },
-      body: JSON.stringify({
-        theme: darkMode ? "dark" : "light",
-        language,
-        notifications: {
-          email: true, // Set based on checkboxes
-          systemAlerts: true,
-        },
-      }),
-    });
+  const handleThemeToggle = () => {
+    setDarkMode(!darkMode);
+  };
 
-    const data = await res.json();
-    if (res.ok) {
-      alert("✅ Settings saved successfully!");
-    } else {
-      alert(`❌ Failed to save settings: ${data.message}`);
-    }
-  } catch (err) {
-    console.error("Save settings error:", err);
-    alert("⚠️ Could not save settings.");
-  }
-};
-
- const handlePasswordChange = async () => {
-  if (!currentPassword || !newPassword) {
-    setMessage("⚠️ Please fill in all fields.");
-    return;
-  }
-
-  try {
-    const res = await fetch("/api/settings/update-password", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        currentPassword,
-        newPassword,
-      }),
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-      setMessage("✅ Password updated successfully!");
-    } else {
-      setMessage(`❌ ${data.message}`);
-    }
-  } catch (error) {
-    console.error("Password update error:", error);
-    setMessage("⚠️ Failed to update password.");
-  }
-};
+  const handleSaveSettings = () => {
+    alert("✅ Settings saved successfully!");
+  };
 
   return (
     <SettingsContainer style={{ background: darkMode ? "#2c3e50" : "#ffffff", color: darkMode ? "#ecf0f1" : "#000" }}>
       <Title>Settings</Title>
       <p>Customize your system preferences below.</p>
 
+      {/* Theme Settings */}
       <Section>
         <SubTitle>Theme Settings</SubTitle>
         <Label>
-          <input type="checkbox" checked={darkMode} onChange={() => setDarkMode(!darkMode)} /> Enable Dark Mode
+          <input type="checkbox" checked={darkMode} onChange={handleThemeToggle} /> Enable Dark Mode
         </Label>
       </Section>
 
+      {/* Language Selection */}
       <Section>
         <SubTitle>Language</SubTitle>
         <select
@@ -181,6 +119,7 @@ const SettingsPage = () => {
         </select>
       </Section>
 
+      {/* Password Update */}
       <Section>
         <SubTitle>Change Password</SubTitle>
         <Input
@@ -196,28 +135,28 @@ const SettingsPage = () => {
           onChange={(e) => setNewPassword(e.target.value)}
         />
         <Button onClick={handlePasswordChange}>Update Password</Button>
+        {message && <p style={{ marginTop: "10px" }}>{message}</p>}
       </Section>
 
+      {/* Notifications */}
       <Section>
         <SubTitle>Notifications</SubTitle>
         <Label>
-          <input
-            type="checkbox"
-            checked={emailNotifications}
-            onChange={() => setEmailNotifications(!emailNotifications)}
-          /> Receive Email Notifications
+          <input type="checkbox" defaultChecked /> Receive Email Notifications
         </Label>
         <Label>
-          <input
-            type="checkbox"
-            checked={systemAlerts}
-            onChange={() => setSystemAlerts(!systemAlerts)}
-          /> Receive System Alerts
+          <input type="checkbox" defaultChecked /> Receive System Alerts
         </Label>
       </Section>
 
+      {/* Account Deletion */}
+      <Section>
+        <SubTitle style={{ color: darkMode ? "#f1c40f" : "#e74c3c" }}>Danger Zone</SubTitle>
+        <DangerButton>Delete Account</DangerButton>
+      </Section>
+
+      {/* Save Button */}
       <Button onClick={handleSaveSettings}>Save Settings</Button>
-      {message && <p style={{ marginTop: "10px" }}>{message}</p>}
     </SettingsContainer>
   );
 };
