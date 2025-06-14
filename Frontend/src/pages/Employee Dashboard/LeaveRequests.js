@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function LeaveRequestPage() {
   const [form, setForm] = useState({
-    name: '',
-    email: '',
     leaveType: '',
     startDate: '',
     endDate: '',
@@ -11,26 +10,17 @@ export default function LeaveRequestPage() {
   });
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [leaveHistory, setLeaveHistory] = useState([]);
 
   const leaveTypes = [
     { value: '', label: 'Select leave type' },
-    { value: 'sick', label: 'Sick Leave' },
-    { value: 'vacation', label: 'Vacation' },
-    { value: 'personal', label: 'Personal Leave' },
-    { value: 'maternity', label: 'Maternity Leave' },
-    { value: 'paternity', label: 'Paternity Leave' },
-    { value: 'other', label: 'Other' },
+    { value: 'Sick Leave', label: 'Sick Leave' },
+    { value: 'Casual Leave', label: 'Casual Leave' },
+    { value: 'Other Leave', label: 'Other Leave' }
   ];
 
   function validate() {
     const newErrors = {};
-    if (!form.name.trim()) newErrors.name = 'Employee name is required';
-    if (!form.email.trim()) {
-      newErrors.email = 'Employee email is required';
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(form.email)) newErrors.email = 'Please enter a valid email address';
-    }
     if (!form.leaveType) newErrors.leaveType = 'Please select a leave type';
     if (!form.startDate) newErrors.startDate = 'Please select the start date';
     if (!form.endDate) newErrors.endDate = 'Please select the end date';
@@ -46,7 +36,7 @@ export default function LeaveRequestPage() {
     setForm(prev => ({ ...prev, [name]: value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -54,19 +44,71 @@ export default function LeaveRequestPage() {
       setSubmitted(false);
       return;
     }
-    setErrors({});
-    console.log('Leave Request data:', form);
-    setSubmitted(true);
-    setForm({
-      name: '',
-      email: '',
-      leaveType: '',
-      startDate: '',
-      endDate: '',
-      reason: '',
-    });
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:8080/api/leave/apply', form, {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setErrors({});
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 4000);
+      setForm({ leaveType: '', startDate: '', endDate: '', reason: '' });
+    // Refetch leave history after new request
+      fetchLeaveHistory();
+    } catch (err) {
+      console.error('Error submitting leave request:', err);
+      alert('Failed to submit leave request');
+    }
   }
 
+  // Fetch leave history
+ const fetchLeaveHistory = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get('http://localhost:8080/api/leave/my', {
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    //console.log('Leave history response:', response.data);
+    setLeaveHistory(Array.isArray(response.data) ? response.data : []);
+  } catch (error) {
+    console.error('Error fetching leave history:', error);
+  }
+};
+useEffect(() => {
+  fetchLeaveHistory();
+}, []);
+
+//useEffect(() => {
+  //console.log('leaveHistory state updated:', leaveHistory);
+//}, [leaveHistory]);
+const thStyle = {
+  padding: '0.75rem',
+  border: '1px solid #ccc',
+  fontWeight: 'bold',
+  textAlign: 'center'
+};
+
+const tdStyle = {
+  padding: '0.75rem',
+  border: '1px solid #ccc'
+};
+
+const formatDate = (dateStr) =>
+  new Date(dateStr).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
   return (
     <>
       <style>{`
@@ -81,16 +123,12 @@ export default function LeaveRequestPage() {
           --transition: 0.3s ease;
           --max-width: 720px;
         }
-        * {
-          box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         body, html, #root {
           margin: 0; padding: 0; height: 100%;
           font-family: 'Poppins', sans-serif;
           background-color: var(--color-bg);
           color: var(--color-text);
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
         }
         main.container {
           max-width: var(--max-width);
@@ -139,7 +177,6 @@ export default function LeaveRequestPage() {
           font-size: 3rem;
           margin: 0 0 1.5rem;
           color: var(--color-primary);
-          user-select: none;
           text-align: center;
         }
         label {
@@ -147,13 +184,8 @@ export default function LeaveRequestPage() {
           margin-bottom: 0.3rem;
           display: inline-block;
           color: var(--color-primary);
-          user-select: none;
         }
-        input[type="text"],
-        input[type="email"],
-        input[type="date"],
-        select,
-        textarea {
+        input, select, textarea {
           width: 100%;
           padding: 0.65rem 1rem;
           font-size: 1rem;
@@ -164,20 +196,12 @@ export default function LeaveRequestPage() {
           transition: border-color var(--transition), box-shadow var(--transition), background-color var(--transition);
           font-family: inherit;
           resize: vertical;
-          min-height: 40px;
         }
-        input[type="text"]:focus,
-        input[type="email"]:focus,
-        input[type="date"]:focus,
-        select:focus,
-        textarea:focus {
+        input:focus, select:focus, textarea:focus {
           outline: none;
           border-color: var(--color-primary);
           box-shadow: 0 0 5px rgba(17, 24, 39, 0.3);
           background-color: #fff;
-        }
-        textarea {
-          min-height: 90px;
         }
         select {
           appearance: none;
@@ -197,15 +221,12 @@ export default function LeaveRequestPage() {
           font-weight: 700;
           border-radius: var(--radius);
           cursor: pointer;
-          user-select: none;
           transition: background-color var(--transition), transform var(--transition);
           align-self: center;
           min-width: 140px;
         }
-        button:hover,
-        button:focus {
+        button:hover, button:focus {
           background-color: #374151;
-          outline: none;
           transform: scale(1.03);
         }
         .error-message {
@@ -213,52 +234,17 @@ export default function LeaveRequestPage() {
           font-weight: 600;
           font-size: 0.875rem;
           margin-top: 0.25rem;
-          user-select: none;
         }
         @media (max-width: 600px) {
-          h1 {
-            font-size: 2.25rem;
-          }
-          .card {
-            padding: 2rem 1.5rem;
-          }
+          h1 { font-size: 2.25rem; }
+          .card { padding: 2rem 1.5rem; }
         }
       `}</style>
-      <main className="container" role="main">
+
+     <main className="container">
         <section aria-labelledby="leave-request-heading" className="card" tabIndex={-1}>
           <h1 id="leave-request-heading">Leave Request</h1>
           <form onSubmit={handleSubmit} noValidate>
-            <div>
-              <label htmlFor="name">Employee Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                placeholder="Your full name"
-                value={form.name}
-                onChange={handleChange}
-                aria-describedby={errors.name ? 'error-name' : undefined}
-                aria-invalid={errors.name ? 'true' : 'false'}
-                required
-              />
-              {errors.name && <p className="error-message" id="error-name">{errors.name}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="email">Employee Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                placeholder="your.email@example.com"
-                value={form.email}
-                onChange={handleChange}
-                aria-describedby={errors.email ? 'error-email' : undefined}
-                aria-invalid={errors.email ? 'true' : 'false'}
-                required
-              />
-              {errors.email && <p className="error-message" id="error-email">{errors.email}</p>}
-            </div>
 
             <div>
               <label htmlFor="leaveType">Leave Type</label>
@@ -268,7 +254,7 @@ export default function LeaveRequestPage() {
                 value={form.leaveType}
                 onChange={handleChange}
                 aria-describedby={errors.leaveType ? 'error-leaveType' : undefined}
-                aria-invalid={errors.leaveType ? 'true' : 'false'}
+                aria-invalid={!!errors.leaveType}
                 required
               >
                 {leaveTypes.map(({ value, label }) => (
@@ -289,7 +275,7 @@ export default function LeaveRequestPage() {
                 value={form.startDate}
                 onChange={handleChange}
                 aria-describedby={errors.startDate ? 'error-startDate' : undefined}
-                aria-invalid={errors.startDate ? 'true' : 'false'}
+                aria-invalid={!!errors.startDate}
                 required
               />
               {errors.startDate && <p className="error-message" id="error-startDate">{errors.startDate}</p>}
@@ -304,7 +290,7 @@ export default function LeaveRequestPage() {
                 value={form.endDate}
                 onChange={handleChange}
                 aria-describedby={errors.endDate ? 'error-endDate' : undefined}
-                aria-invalid={errors.endDate ? 'true' : 'false'}
+                aria-invalid={!!errors.endDate}
                 required
               />
               {errors.endDate && <p className="error-message" id="error-endDate">{errors.endDate}</p>}
@@ -319,7 +305,7 @@ export default function LeaveRequestPage() {
                 value={form.reason}
                 onChange={handleChange}
                 aria-describedby={errors.reason ? 'error-reason' : undefined}
-                aria-invalid={errors.reason ? 'true' : 'false'}
+                aria-invalid={!!errors.reason}
                 required
                 rows="4"
               />
@@ -327,8 +313,43 @@ export default function LeaveRequestPage() {
             </div>
 
             <button type="submit" aria-live="polite">Send Request</button>
+            {submitted && (
+      <p style={{ color: 'green', textAlign: 'center', fontWeight: '600' }}>
+      Leave request submitted successfully!
+      </p>
+      )}
           </form>
         </section>
+    {leaveHistory.length > 0 && (
+  <section className="card" style={{ marginTop: '2rem' }}>
+    <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '1rem' }}>Leave History</h2>
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ccc' }}>
+        <thead style={{ backgroundColor: '#f5f5f5' }}>
+          <tr>
+            <th style={thStyle}>Type</th>
+            <th style={thStyle}>From</th>
+            <th style={thStyle}>To</th>
+            <th style={thStyle}>Reason</th>
+            <th style={thStyle}>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {leaveHistory.map((leave, index) => (
+            <tr key={index} style={{ textAlign: 'center' }}>
+              <td style={tdStyle}>{leave.leaveType}</td>
+              <td style={tdStyle}>{formatDate(leave.startDate)}</td>
+              <td style={tdStyle}>{formatDate(leave.endDate)}</td>
+              <td style={tdStyle}>{leave.reason}</td>
+              <td style={tdStyle}>{capitalize(leave.status)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+)}
+
       </main>
     </>
   );
