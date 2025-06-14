@@ -14,6 +14,8 @@ const EmployeeDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
+
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
