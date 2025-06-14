@@ -1,21 +1,24 @@
 import express from 'express';
-import {isAdmin, protectRoute} from '../middlewares/auth.middleware.js'
-import {applyLeave, getAllLeaves, getMyLeaves, updateLeaveStatus} from '../controllers/leave.controller.js'
+import { isAdmin, protectRoute } from '../middlewares/auth.middleware.js';
+import {
+  createLeaveRequest,
+  getAllLeaves,
+  getMyLeaves,
+  updateLeaveStatus
+} from '../controllers/leave.controller.js';
 
-const router = express.Router()
+const router = express.Router();
 
-//apply leaves for employee
-router.post("apply",protectRoute,applyLeave)
+// ✅ Apply for leave (employee)
+router.post("/apply", protectRoute, createLeaveRequest);
 
-//get all leaves for employee (for each employee)
-router.get("my",protectRoute,getAllLeaves)
+// ✅ View my leaves (employee)
+router.get("/my", protectRoute, getMyLeaves);
 
-//view all leave requests (for admin)
-router.get("all",protectRoute,isAdmin,getMyLeaves)
+// ✅ Admin views all leave requests
+router.get("/all", protectRoute, isAdmin, getAllLeaves);
 
-//approve leave request (for admin)
-router.put("update/:id",protectRoute,isAdmin,updateLeaveStatus)
+// ✅ Admin approves/rejects
+router.put("/update/:id", protectRoute, isAdmin, updateLeaveStatus);
 
-
-
-export default router
+export default router;
