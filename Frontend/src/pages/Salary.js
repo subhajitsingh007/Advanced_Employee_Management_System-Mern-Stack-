@@ -121,54 +121,142 @@ const Salary = () => {
   const totalDeductions = salaries.reduce((acc, item) => acc + item.deductions, 0);
 
   return (
-    <div style={{ padding: "2rem" }}>
+    <div className="salary-container">
+      <style>{`
+        .salary-container {
+          padding: 2rem;
+          font-family: 'Segoe UI', sans-serif;
+          background-color: #f9fafb;
+        }
+
+        form {
+          margin-bottom: 2rem;
+          background: white;
+          padding: 1.5rem;
+          border-radius: 10px;
+          box-shadow: 0 0 10px rgba(0,0,0,0.05);
+          max-width: 600px;
+        }
+
+        form label {
+          font-weight: bold;
+          display: block;
+          margin-top: 1rem;
+        }
+
+        form input,
+        form select {
+          width: 100%;
+          padding: 10px;
+          margin-top: 6px;
+          border-radius: 6px;
+          border: 1px solid #ccc;
+        }
+
+        form button {
+          margin-top: 1rem;
+          padding: 10px 20px;
+          background-color: #6366f1;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+        }
+
+        form button:hover {
+          background-color: #4f46e5;
+        }
+
+        h2 {
+          margin-top: 2rem;
+          color: #111827;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          background: white;
+          margin-top: 1rem;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        }
+
+        th, td {
+          padding: 12px 15px;
+          text-align: left;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+          background-color: #f3f4f6;
+          color: #374151;
+        }
+
+        tr:hover {
+          background-color: #f9fafb;
+        }
+
+        input[type="number"] {
+          padding: 8px;
+        }
+
+        .summary {
+          margin-top: 1.5rem;
+          background: #fff;
+          padding: 1rem;
+          border-left: 4px solid #4f46e5;
+          border-radius: 8px;
+          box-shadow: 0 0 10px rgba(0,0,0,0.03);
+          max-width: 400px;
+        }
+
+        .summary p {
+          margin: 6px 0;
+          color: #444;
+        }
+
+        button {
+          margin: 4px 4px 4px 0;
+        }
+      `}</style>
+
       <h2>New Salary Entry</h2>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSubmit();
-        }}
-        style={{ display: "grid", gap: "1rem", maxWidth: "500px" }}
-      >
-        <div>
-          <label>Employee</label>
-          <select name="userId" value={form.userId} onChange={handleChange} required>
-            <option value="">Select Employee</option>
-            {users.map((user) => (
-              <option key={user._id} value={user._id}>
-                {user.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label>Basic Salary</label>
-          <input type="number" name="basicSalary" value={form.basicSalary} onChange={handleChange} required />
-        </div>
-        <div>
-          <label>Bonus</label>
-          <input type="number" name="bonus" value={form.bonus} onChange={handleChange} required />
-        </div>
-        <div>
-          <label>Deductions</label>
-          <input type="number" name="deductions" value={form.deductions} onChange={handleChange} required />
-        </div>
-        <div>
-          <label>Month (YYYY-MM)</label>
-          <input type="month" name="month" value={form.month} onChange={handleChange} required />
-        </div>
-        <button type="submit">Create Salary</button>
+      <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+        <label>Employee</label>
+        <select name="userId" value={form.userId} onChange={handleChange} required>
+          <option value="">Select Employee</option>
+          {users.map((user) => (
+            <option key={user._id} value={user._id}>
+              {user.name}
+            </option>
+          ))}
+        </select>
+
+        <label>Basic Salary</label>
+        <input type="number" name="basicSalary" value={form.basicSalary} onChange={handleChange} required />
+
+        <label>Bonus</label>
+        <input type="number" name="bonus" value={form.bonus} onChange={handleChange} required />
+
+        <label>Deductions</label>
+        <input type="number" name="deductions" value={form.deductions} onChange={handleChange} required />
+
+        <label>Month (YYYY-MM)</label>
+        <input type="month" name="month" value={form.month} onChange={handleChange} required />
+
+        <button type="submit">Add Salary</button>
       </form>
 
-      <hr style={{ margin: "2rem 0" }} />
-
       <h2>Salary Summary</h2>
-      <p>Total Paid: ₹{totalPaid}</p>
-      <p>Total Bonuses: ₹{totalBonuses}</p>
-      <p>Total Deductions: ₹{totalDeductions}</p>
+      <div className="summary">
+        <p><strong>Total Paid:</strong> ₹{totalPaid}</p>
+        <p><strong>Total Bonuses:</strong> ₹{totalBonuses}</p>
+        <p><strong>Total Deductions:</strong> ₹{totalDeductions}</p>
+      </div>
 
-      <h2 style={{ marginTop: "2rem" }}>Salary Records</h2>
-      <table border="1" cellPadding="10" style={{ width: "100%", marginTop: "1rem", textAlign: "left" }}>
+      <h2>Salary Records</h2>
+      <table>
         <thead>
           <tr>
             <th>Employee</th>
@@ -185,35 +273,14 @@ const Salary = () => {
             editingSalary === s._id ? (
               <tr key={s._id}>
                 <td>{s.user?.name || "unknown"}</td>
-                <td>
-                  <input
-                    type="number"
-                    name="basicSalary"
-                    value={editForm.basicSalary}
-                    onChange={handleEditChange}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    name="bonus"
-                    value={editForm.bonus}
-                    onChange={handleEditChange}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    name="deductions"
-                    value={editForm.deductions}
-                    onChange={handleEditChange}
-                  />
-                </td>
+                <td><input type="number" name="basicSalary" value={editForm.basicSalary} onChange={handleEditChange} /></td>
+                <td><input type="number" name="bonus" value={editForm.bonus} onChange={handleEditChange} /></td>
+                <td><input type="number" name="deductions" value={editForm.deductions} onChange={handleEditChange} /></td>
                 <td>--</td>
                 <td>{s.month}</td>
                 <td>
                   <button onClick={handleUpdateSubmit}>Save</button>
-                  <button onClick={() => setEditingSalary(null)}>Cancel</button>
+                  <button onClick={() => setEditingSalary(null)} style={{ background: "#9ca3af", color: "white" }}>Cancel</button>
                 </td>
               </tr>
             ) : (
@@ -224,9 +291,7 @@ const Salary = () => {
                 <td>₹{s.deductions}</td>
                 <td>₹{s.netSalary}</td>
                 <td>{s.month}</td>
-                <td>
-                  <button onClick={() => handleEditClick(s)}>Edit</button>
-                </td>
+                <td><button onClick={() => handleEditClick(s)}>Edit</button></td>
               </tr>
             )
           )}
